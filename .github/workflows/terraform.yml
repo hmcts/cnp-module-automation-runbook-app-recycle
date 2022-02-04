@@ -1,0 +1,48 @@
+name: 'Terraform'
+
+on:
+  pull_request:
+    branches:
+      - master
+
+env:
+  TF_VERSION: 0.15.4
+
+jobs:
+  terraform:
+    name: 'terraform'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Setup providers configuration
+        shell: bash
+        run: |
+          cat << EOF > provider.tf
+          terraform {
+            required_providers {
+              azurerm = {
+                version = ">=2.0.0"
+              }
+            }
+          }
+
+          provider "azurerm" {
+            features {}
+          }
+
+          EOF
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform format
+        run: terraform fmt -check
+
+      - name: Terraform validate
+        run: terraform validate
