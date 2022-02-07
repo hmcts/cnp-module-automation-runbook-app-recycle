@@ -43,7 +43,7 @@ resource "azurerm_automation_variable_string" "target_application_secret" {
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
   value                   = var.target_application_secret
-  encrypted = true
+  encrypted               = true
 }
 
 resource "azurerm_automation_variable_string" "environment" {
