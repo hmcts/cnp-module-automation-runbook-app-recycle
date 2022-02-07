@@ -1,4 +1,5 @@
 locals {
+  today      = timestamp()
   start_date = formatdate("YYYY-MM-DD", timeadd(local.today, "24h"))
   start_time = "01:00:00"
 }
