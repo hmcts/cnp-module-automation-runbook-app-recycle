@@ -1,7 +1,7 @@
 
 locals {
   runbook_name    = "client_secrets.ps1"
-  runbook_content = file("./${local.runbook_name}")
+  runbook_content = file("${path.module}/${local.runbook_name}")
 }
 
 resource "azurerm_automation_runbook" "client_serects" {
@@ -14,5 +14,6 @@ resource "azurerm_automation_runbook" "client_serects" {
   description             = "This is a runbook to automate the renewal and recycling of Client Secrects"
   runbook_type            = "PowerShell"
 
+  ## TODO: maybe need to also provide a link?
   content = local.runbook_content
 }
