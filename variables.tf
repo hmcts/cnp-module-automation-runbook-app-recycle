@@ -7,6 +7,10 @@ variable "resource_group_name" {
   type        = string
   description = "Resource Group Name"
 }
+variable "tags" {
+  type        = map(string)
+  description = "Runbook Tags"
+}
 
 variable "application_id_collection" {
   type        = list(string)
@@ -19,6 +23,7 @@ variable "source_managed_identity_id" {
   description = "Managed Identity to authenticate with. Default will use current context."
   default     = ""
 }
+
 
 variable "environment" {
   type        = string

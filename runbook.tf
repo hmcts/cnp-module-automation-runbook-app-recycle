@@ -16,4 +16,6 @@ resource "azurerm_automation_runbook" "client_serects" {
 
   ## TODO: maybe need to also provide a link?
   content = local.runbook_content
+
+  tags = var.tags
 }
