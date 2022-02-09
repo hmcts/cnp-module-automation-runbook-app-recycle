@@ -1,7 +1,7 @@
 locals {
   today      = timestamp()
   start_date = formatdate("YYYY-MM-DD", timeadd(local.today, "24h"))
-  start_time = "01:00:00"
+  start_time = "01:00:00Z00:00"
 }
 
 resource "azurerm_automation_schedule" "client_serects" {
