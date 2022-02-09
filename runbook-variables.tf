@@ -5,6 +5,16 @@ locals {
   source_tenant_id           = data.azurerm_client_config.current.tenant_id
 }
 
+output "current" {
+  value = data.azurerm_client_config.current
+}
+output "var" {
+  value = var.source_managed_identity_id
+}
+output "local" {
+  value = local.source_managed_identity_id
+}
+
 
 resource "azurerm_automation_variable_string" "application_id_collection" {
   name                    = "servicePrincipalIdCollection"
