@@ -1,7 +1,7 @@
 
 data "azurerm_client_config" "current" {}
 locals {
-  source_managed_identity_id = var.source_managed_identity_id != "" ? var.source_managed_identity_id : data.azurerm_client_config.current.object_id
+  source_managed_identity_id = var.source_managed_identity_id == "" ? data.azurerm_client_config.current.object_id : var.source_managed_identity_id
   source_tenant_id           = data.azurerm_client_config.current.tenant_id
 }
 
