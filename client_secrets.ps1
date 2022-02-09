@@ -92,17 +92,17 @@ foreach ($spId in $servicePrincipalIdCollection) {
 
   if ($containsApp) {
 
-    $app = $Applications | Where-Object $_.Id -eq $spId
+    $app = $Applications | Where-Object { $_.Id -eq $spId }
 
     $appName = $app.DisplayName
-    $appId = $app.AppId
+    $appId = $app.Id
     $secret = $app.PasswordCredentials
 
     $secretName = "$prefix-$product-$environment-$appName"
   
     Write-Host "Checking $appName has automated secrets"
   
-    $secretExists = $secret.DisplayName -contains "$secretName*"
+    $secretExists = $($secret.DisplayName -like "$secretName*").length -gt 0
   
     if (!$secretExists) {
       Write-Host "Creating Secret $secretName"
@@ -117,7 +117,7 @@ foreach ($spId in $servicePrincipalIdCollection) {
   
       ## Add/Update Secret 
       $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
-      $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $secretName -SecretValue $secretvalue -DefaultProfile $sourceContext
+      $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
     }
     else {
 
@@ -159,12 +159,18 @@ foreach ($spId in $servicePrincipalIdCollection) {
     
             ## Add/Update Secret 
             $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
-            $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name $secretName -SecretValue $secretvalue -DefaultProfile $sourceContext
+            $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
             
+          }
+          else {
+            Write-Host "$secretName secret is not exiring"
           }
         }
       }
     }
+    
+    $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+    $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
   }
   else {
     Write-Output "$spId is not found in the Application Collection."
