@@ -5,17 +5,6 @@ locals {
   source_tenant_id           = data.azurerm_client_config.current.tenant_id
 }
 
-output "current" {
-  value = data.azurerm_client_config.current
-}
-output "var" {
-  value = var.source_managed_identity_id
-}
-output "local" {
-  value = local.source_managed_identity_id
-}
-
-
 resource "azurerm_automation_variable_string" "application_id_collection" {
   name                    = "servicePrincipalIdCollection"
   resource_group_name     = var.resource_group_name
@@ -29,12 +18,12 @@ resource "azurerm_automation_variable_string" "source_tenant_id" {
   automation_account_name = var.automation_account_name
   value                   = local.source_tenant_id
 }
-/* resource "azurerm_automation_variable_string" "source_client_id" {
+resource "azurerm_automation_variable_string" "source_client_id" {
   name                    = "sourceClientId"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
   value                   = local.source_managed_identity_id
-} */
+}
 
 resource "azurerm_automation_variable_string" "target_tenant_id" {
   name                    = "targetTenantId"
