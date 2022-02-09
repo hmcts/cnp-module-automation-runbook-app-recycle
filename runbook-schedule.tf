@@ -10,7 +10,7 @@ resource "azurerm_automation_schedule" "client_serects" {
   automation_account_name = var.automation_account_name
   frequency               = "Day"
   interval                = 1
-  start_time              = "${local.start_date}'T'${local.start_time}Z"
+  start_time              = "${local.start_date}T${local.start_time}Z"
   description             = "This is a schedule to automate the renewal and recycling of Client Secrects"
 }
 
