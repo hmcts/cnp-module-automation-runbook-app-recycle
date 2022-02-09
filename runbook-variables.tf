@@ -29,12 +29,12 @@ resource "azurerm_automation_variable_string" "source_tenant_id" {
   automation_account_name = var.automation_account_name
   value                   = local.source_tenant_id
 }
-resource "azurerm_automation_variable_string" "source_client_id" {
+/* resource "azurerm_automation_variable_string" "source_client_id" {
   name                    = "sourceClientId"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
   value                   = local.source_managed_identity_id
-}
+} */
 
 resource "azurerm_automation_variable_string" "target_tenant_id" {
   name                    = "targetTenantId"
