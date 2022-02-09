@@ -2,20 +2,20 @@
 ### Graph API: https://docs.microsoft.com/en-us/graph/api/resources/application?view=graph-rest-1.0
 
 Param(
-  [string]$sourceClientId,
-  [string]$sourceTenantId,
+  [string]$source_client_id,
+  [string]$source_tenant_id,
 
-  [string]$targetTenantId,
-  [string]$targetApplicationId,
-  [string]$targetApplicationSecret,
+  [string]$target_tenant_id,
+  [string]$target_application_id,
+  [string]$target_application_secret,
 
-  [array]$servicePrincipalIdCollection,
+  [array]$service_principal_id_collection,
 
   [string]$environment,
   [string]$product,
   [string]$prefix,
 
-  [string]$keyVaultName 
+  [string]$key_vault_name 
 )
  
 #############################################################
@@ -27,10 +27,10 @@ Disable-AzContextAutosave -Scope Process | Out-Null
  
 # Connect using a Managed Service Identity
 try {
-  $sourceContext = (Connect-AzAccount -Identity -TenantId $sourceTenantId -AccountId $sourceClientId ).context
+  $sourceContext = (Connect-AzAccount -Identity -TenantId $source_tenant_id -AccountId $source_client_id ).context
 }
 catch {
-  Write-Output "Cannot connect to the source Managed Identity $sourceClientId in $sourceTenantId. Aborting."; 
+  Write-Output "Cannot connect to the source Managed Identity $source_client_id in $source_tenant_id. Aborting."; 
   exit
 }
 
@@ -39,16 +39,16 @@ catch {
 ###           Set Target Context                          ###
 #############################################################
 
-if ($null -eq $targetTenantId -or $targetTenantId -eq "") {
+if ($null -eq $target_tenant_id -or $target_tenant_id -eq "") {
 
   $targetContext = $sourceContext
 }
 else {
   # Connect to target Tenant
   try {
-    $password = ConvertTo-SecureString $targetApplicationSecret -AsPlainText -Force
-    $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($targetApplicationId, $password)
-    $targetContext = (Connect-AzAccount -ServicePrincipal -TenantId $targetTenantId -Credential $Credential).context
+    $password = ConvertTo-SecureString $target_application_secret -AsPlainText -Force
+    $Credential = New-Object -TypeName System.Management.Automation.PSCredential ($target_application_id, $password)
+    $targetContext = (Connect-AzAccount -ServicePrincipal -TenantId $target_tenant_id -Credential $Credential).context
   }
   catch {
     Write-Output "Failed to connect remote tenant. Aborting."; 
@@ -86,7 +86,7 @@ $Applications = Get-MgApplication
 $expiringRangeDays = 30
 $expiryFromNowYears = 1
 
-foreach ($spId in $servicePrincipalIdCollection) {
+foreach ($spId in $service_principal_id_collection) {
   
   $containsApp = $Applications.Id -contains $spId
 
@@ -118,6 +118,8 @@ foreach ($spId in $servicePrincipalIdCollection) {
       ## Add/Update Secret 
       $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
       $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+      $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+      $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
     }
     else {
 
@@ -169,8 +171,6 @@ foreach ($spId in $servicePrincipalIdCollection) {
       }
     }
     
-    $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-    $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
   }
   else {
     Write-Output "$spId is not found in the Application Collection."
