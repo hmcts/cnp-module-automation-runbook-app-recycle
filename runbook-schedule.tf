@@ -19,5 +19,6 @@ resource "azurerm_automation_schedule" "client_serects_trigger_once" {
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
   frequency               = "OneTime"
+  start_time              = formatdate("YYYY-MM-DD'T'hh:mm:ssZ", timeadd(local.today, "10m"))
   description             = "This is a one time trigger to automate the renewal and recycling of Client Secrects"
 }
