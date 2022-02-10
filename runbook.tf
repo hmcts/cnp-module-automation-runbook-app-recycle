@@ -20,12 +20,12 @@ resource "azurerm_automation_runbook" "client_serects" {
   tags = var.tags
 }
 
-resource "azurerm_automation_module" "az_graph" {
-  name                    = "Microsoft.Graph"
+resource "azurerm_automation_module" "az_graph_authentication" {
+  name                    = "Microsoft.Graph.Authentication"
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
 
   module_link {
-    uri = "https://psg-prod-eastus.azureedge.net/packages/microsoft.graph.1.9.2.nupkg"
+    uri = "https://psg-prod-eastus.azureedge.net/packages/microsoft.graph.authentication.1.9.2.nupkg"
   }
 }
