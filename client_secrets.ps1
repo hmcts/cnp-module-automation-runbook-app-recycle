@@ -18,6 +18,12 @@ Param(
   [string]$key_vault_name 
 )
  
+$service_principal_id_collection_arr = $service_principal_id_collection.Split(',')
+if ($service_principal_id_collection_arr.length -lt 1){
+  Write-Output "No Applications to process."; 
+  exit
+}
+
 #############################################################
 ###           Get Current Context                      ###
 #############################################################
@@ -61,38 +67,36 @@ $targetContext = Set-AzContext -Context $targetContext
 
 
 #############################################################
-###           Setup script                                ###
+###           Connect to Graph                            ###
 #############################################################
 try {
-  Write-Host "Check Microsoft.Graph.Applications module installed"
-  Get-InstalledModule -Name Microsoft.Graph.Applications -Erroraction stop
-}
-catch {
-  Write-Host "Install Microsoft.Graph.Applications module"
-  Install-Module -Name Microsoft.Graph.Applications -Scope CurrentUser -Force -Confirm:$false
-}
-
-Write-Host "Connect to Graph API"
+  Write-Host "Connect to Graph API"
 $token = Get-AzAccessToken -ResourceUrl "https://graph.microsoft.com/"
 Connect-MgGraph -AccessToken $token.Token
+} catch {
+  Write-Output "Failed to connect to Graph API. Aborting."; 
+  Write-Error "Error: $($_)"; 
+  exit
+}
 
 
 #############################################################
 ###           Process Service Principals                  ###
 #############################################################
 
-$Applications = Get-MgApplication
+$Applications = Get-MgApplication -All
 
 $expiringRangeDays = 30
 $expiryFromNowYears = 1
 
-foreach ($spId in $service_principal_id_collection) {
+foreach ($spId in $service_principal_id_collection_arr) {
   
   $containsApp = $Applications.Id -contains $spId
 
   if ($containsApp) {
 
-    $app = $Applications | Where-Object { $_.Id -eq $spId }
+    try {
+      $app = $Applications | Where-Object { $_.Id -eq $spId }
 
     $appName = $app.DisplayName
     $appId = $app.Id
@@ -170,6 +174,11 @@ foreach ($spId in $service_principal_id_collection) {
         }
       }
     }
+  } catch {
+    Write-Output "Failed to update secret: $spId. Aborting."; 
+    Write-Error "Error: $($_)"; 
+    exit
+  }
     
   }
   else {
