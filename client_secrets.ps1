@@ -15,13 +15,17 @@ Param(
   [string]$product,
   [string]$prefix,
 
-  [string]$key_vault_name 
+  [string]$keyVaultName 
 )
- 
+
+
 $service_principal_id_collection_arr = $service_principal_id_collection.Split(',')
-if ($service_principal_id_collection_arr.length -lt 1){
-  Write-Output "No Applications to process."; 
+if ($service_principal_id_collection_arr.length -lt 1) {
+  Write-Output "No Applications to process. $service_principal_id_collection"; 
   exit
+}
+else {
+  Write-Output "there is Applications to process. $service_principal_id_collection"; 
 }
 
 #############################################################
@@ -67,127 +71,121 @@ $targetContext = Set-AzContext -Context $targetContext
 
 
 #############################################################
-###           Connect to Graph                            ###
-#############################################################
-try {
-  Write-Host "Connect to Graph API"
-$token = Get-AzAccessToken -ResourceUrl "https://graph.microsoft.com/"
-Connect-MgGraph -AccessToken $token.Token
-} catch {
-  Write-Output "Failed to connect to Graph API. Aborting."; 
-  Write-Error "Error: $($_)"; 
-  exit
-}
-
-
-#############################################################
 ###           Process Service Principals                  ###
 #############################################################
 
-$Applications = Get-MgApplication -All
+try {
+  $Applications = Get-AzADApplication -DefaultProfile $targetContext
+  Write-Output "Applications Found:"
+  foreach ($app in $Applications.DisplayName) {
+    Write-Output "$app"
+  }
 
-$expiringRangeDays = 30
-$expiryFromNowYears = 1
+  $expiringRangeDays = 30
+  $expiryFromNowYears = 1
 
-foreach ($spId in $service_principal_id_collection_arr) {
+  Write-Output "Start Processing"
+  foreach ($spId in $service_principal_id_collection_arr) {
   
-  $containsApp = $Applications.Id -contains $spId
+    $containsApp = $Applications.ObjectId -contains $spId
 
-  if ($containsApp) {
+    if ($containsApp) {
 
-    try {
-      $app = $Applications | Where-Object { $_.Id -eq $spId }
+      try {
+        $app = $Applications | Where-Object { $_.Id -eq $spId }
 
-    $appName = $app.DisplayName
-    $appId = $app.Id
-    $secret = $app.PasswordCredentials
+        $appName = $app.DisplayName
+        $appId = $app.Id
+        $secret = $app.PasswordCredentials
 
-    $secretName = "$prefix-$product-$environment-$appName"
+        $secretName = "$prefix-$product-$environment-$appName"
   
-    Write-Host "Checking $appName has automated secrets"
+        Write-Host "Checking $appName has automated secrets"
   
-    $secretExists = $($secret.DisplayName -like "$secretName*").length -gt 0
+        $secretExists = $($secret.DisplayName -like "$secretName*").length -gt 0
   
-    if (!$secretExists) {
-      Write-Host "Creating Secret $secretName"
-      $params = @{
-        PasswordCredential = @{
-          DisplayName = "$secretName-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
-          EndDateTime = $(Get-Date).AddYears($expiryFromNowYears)
-        }
-      }
-      
-      $createdPassword = Add-MgApplicationPassword -ApplicationId $appId -BodyParameter $params
-  
-      ## Add/Update Secret 
-      $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
-      $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-      $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-      $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
-    }
-    else {
-
-      Write-Host "Recycling $appName Secrets"
-      
-      foreach ($s in $secret) {
-        $keyName = $s.DisplayName 
-        if ($keyName -like "$secretName*") {
-          $keyId = $s.KeyId
-          Write-Host "$appName Secret $keyName"
-  
-          $endDate = $s.EndDateTime
-          $currentDate = Get-Date
-          $expiringRangeDate = $(Get-Date).AddDays($expiringRangeDays)
-      
-          Write-Host "$keyName has expires $endDate"
-          Write-Host "Expiry Date Range is $expiringRangeDate"
-          if ($endDate -lt $currentDate) {
-            Write-Host "$keyName has expired ($endDate). Removing Key"
-            $params = @{
-              KeyId = $keyId
+        if (!$secretExists) {
+          Write-Host "Creating Secret $secretName"
+          $params = @{
+            PasswordCredential = @{
+              DisplayName = "$secretName-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
+              EndDateTime = $(Get-Date).AddYears($expiryFromNowYears)
             }
-        
-            Remove-MgApplicationPassword -ApplicationId $appId -BodyParameter $params
           }
-          elseif ($endDate -lt $expiringRangeDate) {
-            Write-Host "$keyName will expire within $expiringRangeDays."
-            $secretName = "$prefix-$product-$environment-$appName"
+      
+          $createdPassword = New-AzADAppCredential -ObjectId $appId -BodyParameter $params
+  
+          ## Add/Update Secret 
+          $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
+          $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+          $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
+        }
+        else {
+
+          Write-Host "Recycling $appName Secrets"
+      
+          foreach ($s in $secret) {
+            $keyName = $s.DisplayName 
+            if ($keyName -like "$secretName*") {
+              $keyId = $s.KeyId
+              Write-Host "$appName Secret $keyName"
+  
+              $endDate = $s.EndDateTime
+              $currentDate = Get-Date
+              $expiringRangeDate = $(Get-Date).AddDays($expiringRangeDays)
+      
+              Write-Host "$keyName has expires $endDate"
+              Write-Host "Expiry Date Range is $expiringRangeDate"
+              if ($endDate -lt $currentDate) {
+                Write-Host "$keyName has expired ($endDate). Removing Key"
+                $params = @{
+                  KeyId = $keyId
+                }
+        
+                Remove-AzADAppCredential -ObjectId $appId -BodyParameter $params
+              }
+              elseif ($endDate -lt $expiringRangeDate) {
+                Write-Host "$keyName will expire within $expiringRangeDays."
+                $secretName = "$prefix-$product-$environment-$appName"
     
-            Write-Host "Creating Secret $secretName"
-            $params = @{
-              PasswordCredential = @{
-                DisplayName = "$secretName-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
-                EndDateTime = $(Get-Date).AddYears($expiryFromNowYears)
+                Write-Host "Creating Secret $secretName"
+                $params = @{
+                  PasswordCredential = @{
+                    DisplayName = "$secretName-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
+                    EndDateTime = $(Get-Date).AddYears($expiryFromNowYears)
+                  }
+                }
+            
+                $createdPassword = New-AzADAppCredential -ObjectId $appId -BodyParameter $params
+    
+                ## Add/Update Secret 
+                $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
+                $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+            
+              }
+              else {
+                Write-Host "$secretName secret is not exiring"
               }
             }
-            
-            $createdPassword = Add-MgApplicationPassword -ApplicationId $appId -BodyParameter $params
-    
-            ## Add/Update Secret 
-            $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
-            $secret = Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$secretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-            
-          }
-          else {
-            Write-Host "$secretName secret is not exiring"
           }
         }
       }
-    }
-  } catch {
-    Write-Output "Failed to update secret: $spId. Aborting."; 
-    Write-Error "Error: $($_)"; 
-    exit
-  }
+      catch {
+        Write-Output "Failed to update secret: $spId. Aborting."; 
+        Write-Error "Error: $($_)"; 
+        exit
+      }
     
+    }
+    else {
+      Write-Output "$spId is not found in the Application Collection."
+    }
   }
-  else {
-    Write-Output "$spId is not found in the Application Collection."
-  }
+
 }
-
-#############################################################
-###           Disconnect                                  ###
-#############################################################
-
-Disconnect-MgGraph
+catch {
+  Write-Output "Failed to process secrets. Aborting."; 
+  Write-Error "Error: $($_)"; 
+  exit
+}
