@@ -8,7 +8,7 @@ locals {
   start_time = "01:00:00"
 
   parameters = {
-    service_principal_id_collection = join(",", var.application_id_collection) 
+    application_id_collection = join(",", var.application_id_collection) 
     source_tenant_id                = local.source_tenant_id
     source_client_id                = local.source_managed_identity_id
     target_tenant_id                = var.target_tenant_id

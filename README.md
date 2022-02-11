@@ -1,11 +1,11 @@
-# Automation Runbook for Service Principal secret recycling
+# Automation Runbook for Application secret recycling
 
-This module is to setup a Azure Automation Runbook to recycle Service Principal Secrets.
+This module is to setup a Azure Automation Runbook to recycle Application Secrets.
 
 This will do the following:
 - Remove expired secrets created by the runbook
 - Create secondary secrets for secrets due to expire
-- Create secrets for Service Principals that do not have secrets.
+- Create secrets for Application that do not have secrets.
 
 All secrets will be prefixed with `auto-` to highlight they are created via the runbook.
 
@@ -15,7 +15,7 @@ Below is the standard example setup
 
 ```terraform
 module "automation_runbook_client_secret_rotation" {
-  source      = "git::https://github.com/hmcts/cnp-module-automation-runbook-sp-recycle?ref=master"
+  source      = "git@github.com:hmcts/cnp-module-automation-runbook-app-recycle?ref=master"
 
   resource_group_name = "my-resource-group"
 
