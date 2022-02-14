@@ -91,7 +91,7 @@ function GeneratePassword {
 }
 
 #############################################################
-###           Process Applications                  ###
+###           Process Service Principals                  ###
 #############################################################
 
 try {
@@ -105,16 +105,16 @@ try {
   $expiryFromNowYears = 1
 
   Write-Output "Start Processing"
-  foreach ($application_id in $application_id_collection_arr) {
+  foreach ($spId in $service_principal_id_collection_arr) {
   
-    Write-Output "Starting $application_id"
-    $containsApp = $Applications.ObjectId -contains $application_id
+    Write-Output "Starting $spId"
+    $containsApp = $Applications.ObjectId -contains $spId
 
     Write-Output "Contained?  $containsApp"
     if ($containsApp) {
 
       try {
-        $app = $Applications | Where-Object { $_.ObjectId -eq $application_id }
+        $app = $Applications | Where-Object { $_.ObjectId -eq $spId }
 
         $appName = $app.DisplayName
         $objectId = $app.ObjectId
@@ -132,8 +132,10 @@ try {
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
   
         Write-Output "Checking $appName has automated secrets"
-  
-        $secretExists = $($secrets.DisplayName -like "$kvSecretName*").length -gt 0 -and $null -ne $secrets
+
+        $secretCount = $($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" }).length
+        $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
+        Write-Output "Length: $secretCount"
         Write-Output "Auto Secret Exits? $secretExists"
   
         if (!$secretExists) {
@@ -151,7 +153,7 @@ try {
         else {
 
           Write-Output "Recycling $appName Secrets STARTED"
-      
+          Write-Output $secrets
           foreach ($s in ($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" })) {
             $keyName = $s.CustomKeyIdentifier 
             Write-Output "Secret: $keyName"
@@ -189,15 +191,15 @@ try {
         }
       }
       catch {
-        Write-Error "Failed to update secret: $application_id. Aborting."; 
+        Write-Error "Failed to update secret: $spId. Aborting."; 
         Write-Error "Error: $($_)"; 
         exit
       }
     
-      Write-Output "Ending $application_id"
+      Write-Output "Ending $spId"
     }
     else {
-      Write-Warning "$application_id is not found in the Application Collection."
+      Write-Warning "$spId is not found in the Application Collection."
     }
     Write-Output "Nexted"
   }
