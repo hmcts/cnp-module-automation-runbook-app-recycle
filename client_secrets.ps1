@@ -40,7 +40,6 @@ catch {
   exit
 }
 
-
 #############################################################
 ###           Set Target Context                          ###
 #############################################################
@@ -86,8 +85,7 @@ function GeneratePassword {
  
   $password = ScrambleString $password
 
-  $secretvalue = ConvertTo-SecureString $password -AsPlainText -Force
-  return $secretvalue
+  return $password
 }
 
 #############################################################
@@ -125,26 +123,28 @@ try {
         Write-Output "Got $($secrets.length) Secrets in Total"
 
         $kvSecretName = "$prefix-$product-$environment-$appName"
-        $startDate = Get-Date 
-        $endDate = $startDate.AddYears($expiryFromNowYears) 
-        $SecureStringPassword = GeneratePassword
+        $secretStartDate = Get-Date 
+        $secretEndDate = $secretStartDate.AddYears($expiryFromNowYears) 
+        $StringPassword = GeneratePassword
+        $SecureStringPassword = ConvertTo-SecureString $StringPassword -AsPlainText -Force
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
   
         Write-Output "Checking $appName has automated secrets"
 
-        $secretCount = $($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" }).length
+        $filteredSecrets = $($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" })
+        $secretCount = $filteredSecrets.length
         $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
         Write-Output "Length: $secretCount"
         Write-Output "Auto Secret Exits? $secretExists"
   
         if (!$secretExists) {
           Write-Output "Creating Secret $kvSecretName"
-          $createdPassword = New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $startDate -EndDate $endDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
+          New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
 
           ## Add/Update Secret 
           Write-Output "Saving Secret to $keyVaultName"
-          $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
+          $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
           Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           Write-Output "Saving ID to $keyVaultName"
           $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
@@ -153,40 +153,48 @@ try {
         else {
 
           Write-Output "Recycling $appName Secrets STARTED"
-          Write-Output $secrets
-          foreach ($s in ($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" })) {
+          
+          $validSecrets = $false
+          foreach ($s in $filteredSecrets) {
             $keyName = $s.CustomKeyIdentifier 
             Write-Output "Secret: $keyName"
             $keyId = $s.KeyId
             Write-Output "$appName Secret $keyName"
   
-            $endDate = $s.EndDate
+            $endDate = Get-Date($s.EndDate) 
             $currentDate = Get-Date
             $expiringRangeDate = $(Get-Date).AddDays($expiringRangeDays)
-      
-            Write-Output "$keyName has expires $endDate"
-            Write-Output "Expiry Date Range is $expiringRangeDate"
-            if ($endDate -lt $currentDate) {
+
+            $endDateObj = ($endDate - $currentDate)
+            $expiringRangeDateObj = ($endDate - $currentDate)
+
+            Write-Output "$keyName has expires $endDate. It has $($endDateObj.Days) days"
+            Write-Output "Expiry Date Range is $expiringRangeDate. It has $($expiringRangeDateObj.Days) day"
+            if ($endDateObj.Days -lt 1) {
               Write-Output "$keyName has expired ($endDate). Removing Key"
               Remove-AzADAppCredential -ObjectId $appId -KeyId $keyId -Confirm:$false -DefaultProfile $targetContext
             }
-            elseif ($endDate -lt $expiringRangeDate) {
-              Write-Output "$keyName will expire within $expiringRangeDays."
-              $kvSecretName = "$prefix-$product-$environment-$appName"
-    
-              Write-Output "Creating Secret $kvSecretName"
-              $createdPassword = New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $startDate -EndDate $endDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
-      
-              ## Add/Update Secret 
-              $secretvalue = ConvertTo-SecureString $createdPassword.SecretText -AsPlainText -Force
-              Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-            
+            elseif ($expiringRangeDateObj.Days -lt $expiringRangeDays) {
+              Write-Output "$keyName will expire within $expiringRangeDays."           
             }
             else {
               Write-Output "$kvSecretName secret is not expiring"
+              $validSecrets = $true
             }
            
           }
+
+          if (!$validSecrets) {
+            Write-Output "There are no valid secrets"
+    
+            Write-Output "Creating Secret $kvSecretName"
+            New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
+    
+            ## Add/Update Secret 
+            $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
+            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          }
+
           Write-Output "Recycling $appName Secrets ENDED"
         }
       }
