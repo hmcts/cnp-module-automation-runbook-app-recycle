@@ -63,6 +63,9 @@ else {
 
 $targetContext = Set-AzContext -Context $targetContext
 
+#############################################################
+###           Common Functions                           ###
+#############################################################
 
 function GeneratePassword {
   function Get-RandomCharacters($length, $characters) {
@@ -89,7 +92,7 @@ function GeneratePassword {
 }
 
 #############################################################
-###           Process Service Principals                  ###
+###           Process Applications                        ###
 #############################################################
 
 try {
@@ -103,16 +106,16 @@ try {
   $expiryFromNowYears = 1
 
   Write-Output "Start Processing"
-  foreach ($spId in $service_principal_id_collection_arr) {
+  foreach ($application_id in $application_id_collection_arr) {
   
-    Write-Output "Starting $spId"
-    $containsApp = $Applications.ObjectId -contains $spId
+    Write-Output "Starting $application_id"
+    $containsApp = $Applications.ObjectId -contains $application_id
 
     Write-Output "Contained?  $containsApp"
     if ($containsApp) {
 
       try {
-        $app = $Applications | Where-Object { $_.ObjectId -eq $spId }
+        $app = $Applications | Where-Object { $_.ObjectId -eq $application_id }
 
         $appName = $app.DisplayName
         $objectId = $app.ObjectId
@@ -199,15 +202,15 @@ try {
         }
       }
       catch {
-        Write-Error "Failed to update secret: $spId. Aborting."; 
+        Write-Error "Failed to update secret: $application_id. Aborting."; 
         Write-Error "Error: $($_)"; 
         exit
       }
     
-      Write-Output "Ending $spId"
+      Write-Output "Ending $application_id"
     }
     else {
-      Write-Warning "$spId is not found in the Application Collection."
+      Write-Warning "$application_id is not found in the Application Collection."
     }
     Write-Output "Nexted"
   }
