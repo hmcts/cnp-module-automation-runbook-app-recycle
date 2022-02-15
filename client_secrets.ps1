@@ -12,7 +12,7 @@ Param(
   [string]$product,
   [string]$prefix,
 
-  [string]$keyVaultName 
+  [string]$key_vault_name 
 )
 
 $application_id_collection_arr = $application_id_collection.Split(',')
@@ -146,12 +146,12 @@ try {
           New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
 
           ## Add/Update Secret 
-          Write-Output "Saving Secret to $keyVaultName"
+          Write-Output "Saving Secret to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-          Write-Output "Saving ID to $keyVaultName"
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          Write-Output "Saving ID to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
         }
         else {
 
@@ -195,7 +195,7 @@ try {
     
             ## Add/Update Secret 
             $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+            Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           }
 
           Write-Output "Recycling $appName Secrets ENDED"
