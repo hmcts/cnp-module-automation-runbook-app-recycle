@@ -12,7 +12,7 @@ Param(
   [string]$product,
   [string]$prefix,
 
-  [string]$keyVaultName 
+  [string]$key_vault_name 
 )
 
 $application_id_collection_arr = $application_id_collection.Split(',')
@@ -63,6 +63,9 @@ else {
 
 $targetContext = Set-AzContext -Context $targetContext
 
+#############################################################
+###           Common Functions                           ###
+#############################################################
 
 function GeneratePassword {
   function Get-RandomCharacters($length, $characters) {
@@ -89,7 +92,7 @@ function GeneratePassword {
 }
 
 #############################################################
-###           Process Service Principals                  ###
+###           Process Applications                        ###
 #############################################################
 
 try {
@@ -103,16 +106,16 @@ try {
   $expiryFromNowYears = 1
 
   Write-Output "Start Processing"
-  foreach ($spId in $service_principal_id_collection_arr) {
+  foreach ($application_id in $application_id_collection_arr) {
   
-    Write-Output "Starting $spId"
-    $containsApp = $Applications.ObjectId -contains $spId
+    Write-Output "Starting $application_id"
+    $containsApp = $Applications.ObjectId -contains $application_id
 
     Write-Output "Contained?  $containsApp"
     if ($containsApp) {
 
       try {
-        $app = $Applications | Where-Object { $_.ObjectId -eq $spId }
+        $app = $Applications | Where-Object { $_.ObjectId -eq $application_id }
 
         $appName = $app.DisplayName
         $objectId = $app.ObjectId
@@ -143,12 +146,12 @@ try {
           New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
 
           ## Add/Update Secret 
-          Write-Output "Saving Secret to $keyVaultName"
+          Write-Output "Saving Secret to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-          Write-Output "Saving ID to $keyVaultName"
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          Write-Output "Saving ID to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
         }
         else {
 
@@ -192,22 +195,22 @@ try {
     
             ## Add/Update Secret 
             $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
-            Set-AzKeyVaultSecret -VaultName $keyVaultName -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+            Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           }
 
           Write-Output "Recycling $appName Secrets ENDED"
         }
       }
       catch {
-        Write-Error "Failed to update secret: $spId. Aborting."; 
+        Write-Error "Failed to update secret: $application_id. Aborting."; 
         Write-Error "Error: $($_)"; 
         exit
       }
     
-      Write-Output "Ending $spId"
+      Write-Output "Ending $application_id"
     }
     else {
-      Write-Warning "$spId is not found in the Application Collection."
+      Write-Warning "$application_id is not found in the Application Collection."
     }
     Write-Output "Nexted"
   }

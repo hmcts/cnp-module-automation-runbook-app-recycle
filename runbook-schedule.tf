@@ -8,16 +8,16 @@ locals {
   start_time = "01:00:00"
 
   parameters = {
-    application_id_collection = join(",", var.application_id_collection) 
-    source_tenant_id                = local.source_tenant_id
-    source_client_id                = local.source_managed_identity_id
-    target_tenant_id                = var.target_tenant_id
-    target_application_id           = var.target_application_id
-    target_application_secret       = var.target_application_secret
-    environment                     = var.environment
-    product                         = var.product
-    prefix                          = "auto"
-    key_vault_name                  = var.key_vault_name
+    application_id_collection = join(",", var.application_id_collection)
+    source_tenant_id          = local.source_tenant_id
+    source_client_id          = local.source_managed_identity_id
+    target_tenant_id          = var.target_tenant_id
+    target_application_id     = var.target_application_id
+    target_application_secret = var.target_application_secret
+    environment               = var.environment
+    product                   = var.product
+    prefix                    = "auto"
+    key_vault_name            = var.key_vault_name
   }
 }
 

@@ -46,7 +46,9 @@ Additional Variables are
 
 ```
 
-## Requirements
+### Terraform Spec
+
+## Requirements   
 
 | Name | Version |
 |------|---------|
@@ -66,31 +68,19 @@ No modules.
 
 | Name | Type |
 |------|------|
-| [azurerm_automation_runbook.client_serects](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) | resource |      
-| [azurerm_automation_schedule.client_serects](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) | resource |    
+| [azurerm_automation_job_schedule.client_serects](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) | resource |
+| [azurerm_automation_job_schedule.client_serects_trigger_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_job_schedule) | resource |    
+| [azurerm_automation_runbook.client_serects](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_runbook) | resource |
+| [azurerm_automation_schedule.client_serects](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) | resource |
 | [azurerm_automation_schedule.client_serects_trigger_once](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_schedule) | resource |
-| [azurerm_automation_variable_string.application_id_collection](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.environment](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.key_vault_name](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | 
-resource |
-| [azurerm_automation_variable_string.product](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.secret_prefix](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.source_client_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) 
-| resource |
-| [azurerm_automation_variable_string.source_tenant_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) 
-| resource |
-| [azurerm_automation_variable_string.target_application_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.target_application_secret](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) | resource |
-| [azurerm_automation_variable_string.target_tenant_id](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/automation_variable_string) 
-| resource |
 | [azurerm_client_config.current](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/data-sources/client_config) | data source |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
-| <a name="input_application_id_collection"></a> [application\_id\_collection](#input\_application\_id\_collection) | List of Application IDs to manage | `list(string)` | `[]` | no |
-| <a name="input_automation_account_name"></a> [automation\_account\_name](#input\_automation\_account\_name) | Automation Account Name | `string` | n/a | yes |    
+| <a name="input_application_id_collection"></a> [application\_id\_collection](#input\_application\_id\_collection) | List of Application IDs to manage | `list(string)` | `[]` | no |   
+| <a name="input_automation_account_name"></a> [automation\_account\_name](#input\_automation\_account\_name) | Automation Account Name | `string` | n/a | yes |
 | <a name="input_environment"></a> [environment](#input\_environment) | Environment Name e.g. sbox | `string` | n/a | yes |
 | <a name="input_key_vault_name"></a> [key\_vault\_name](#input\_key\_vault\_name) | Key Vault Name to store secrets | `string` | n/a | yes |
 | <a name="input_location"></a> [location](#input\_location) | Location of Runbook | `string` | `"uksouth"` | no |
@@ -98,8 +88,10 @@ resource |
 | <a name="input_resource_group_name"></a> [resource\_group\_name](#input\_resource\_group\_name) | Resource Group Name | `string` | n/a | yes |
 | <a name="input_source_managed_identity_id"></a> [source\_managed\_identity\_id](#input\_source\_managed\_identity\_id) | Managed Identity to authenticate with. Default will use current context. | `string` | `""` | no |
 | <a name="input_tags"></a> [tags](#input\_tags) | Runbook Tags | `map(string)` | n/a | yes |
-| <a name="input_target_application_id"></a> [target\_application\_id](#input\_target\_application\_id) | Application ID with access to Tenant. If target\_tenant\_id is empty this will not be used. | `string` | `""` | no |
-| <a name="input_target_application_secret"></a> [target\_application\_secret](#input\_target\_application\_secret) | Application Secret with access to Tenant. If target\_tenant\_id is empty this will not be used. | `string` | `""` | no |
+| <a name="input_target_application_id"></a> [target\_application\_id](#input\_target\_application\_id) | Application ID with access to Tenant. If target\_tenant\_id is empty this will 
+not be used. | `string` | `""` | no |
+| <a name="input_target_application_secret"></a> [target\_application\_secret](#input\_target\_application\_secret) | Application Secret with access to Tenant. If target\_tenant\_id is 
+empty this will not be used. | `string` | `""` | no |
 | <a name="input_target_tenant_id"></a> [target\_tenant\_id](#input\_target\_tenant\_id) | Target Active Directory Tenant ID. If empty it will use current context | `string` | `""` | no |
 
 ## Outputs
