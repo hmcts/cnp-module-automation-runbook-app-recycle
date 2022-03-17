@@ -24,6 +24,11 @@ variable "source_managed_identity_id" {
   default     = ""
 }
 
+variable "name" {
+  type        = string
+  description = "Runbook Name. Default: rotate-client-secrets"
+  default     = "rotate-client-secrets"
+}
 
 variable "environment" {
   type        = string
