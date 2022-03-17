@@ -149,9 +149,6 @@ try {
           Write-Output "Saving Secret to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
           Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-          Write-Output "Saving ID to $key_vault_name"
-          $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
         }
         else {
 
@@ -197,6 +194,10 @@ try {
             $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
             Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           }
+          
+          Write-Output "Saving ID to $key_vault_name"
+          $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
 
           Write-Output "Recycling $appName Secrets ENDED"
         }
