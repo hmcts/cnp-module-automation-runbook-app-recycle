@@ -5,7 +5,7 @@ locals {
 }
 
 resource "azurerm_automation_runbook" "client_serects" {
-  name                    = "rotate-client-secrets"
+  name                    = var.name
   location                = var.location
   resource_group_name     = var.resource_group_name
   automation_account_name = var.automation_account_name
