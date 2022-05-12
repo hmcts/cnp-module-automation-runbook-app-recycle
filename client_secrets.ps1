@@ -97,8 +97,8 @@ function GeneratePassword {
 try {
   $Applications = Get-AzADApplication -DefaultProfile $targetContext
   Write-Output "Applications Found:"
-  foreach ($app in $Applications.DisplayName) {
-    Write-Output "$app - $($app.Id)"
+  foreach ($app in $Applications) {
+    Write-Output "$($app.DisplayName) - $($app.Id)"
   }
 
   $expiringRangeDays = 30
