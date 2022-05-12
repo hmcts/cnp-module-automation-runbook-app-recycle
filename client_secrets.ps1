@@ -118,7 +118,7 @@ try {
 
         $appName = $app.DisplayName
         $objectId = $app.Id
-        $appId = $app.ApplicationId.ToString()
+        $appId = $app.AppId.ToString()
         Write-Output "Got App $appName"
 
         $secrets = Get-AzADAppCredential -ObjectId $objectId -DefaultProfile $targetContext
@@ -142,7 +142,12 @@ try {
   
         if (!$secretExists) {
           Write-Output "Creating Secret $kvSecretName"
-          New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
+          $passCreds = [PSCustomObject]@{
+            DisplayName = $displayName
+            EndDateTime = $secretEndDate
+            StartDateTime = $secretStartDate
+          }
+          New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
 
           ## Add/Update Secret 
           Write-Output "Saving Secret to $key_vault_name"
@@ -190,7 +195,12 @@ try {
             Write-Output "There are no valid secrets"
     
             Write-Output "Creating Secret $kvSecretName"
-            New-AzADAppCredential -ObjectId $objectId -Password $SecureStringPassword -StartDate $secretStartDate -EndDate $secretEndDate -CustomKeyIdentifier $displayName -DefaultProfile $targetContext
+            $passCreds = [PSCustomObject]@{
+              DisplayName = $displayName
+              EndDateTime = $secretEndDate
+              StartDateTime = $secretStartDate
+            }
+            New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
     
             ## Add/Update Secret 
             $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
