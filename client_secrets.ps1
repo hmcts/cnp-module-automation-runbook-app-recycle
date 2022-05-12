@@ -94,12 +94,11 @@ function GeneratePassword {
 #############################################################
 ###           Process Applications                        ###
 #############################################################
-
 try {
   $Applications = Get-AzADApplication -DefaultProfile $targetContext
   Write-Output "Applications Found:"
   foreach ($app in $Applications.DisplayName) {
-    Write-Output "$app"
+    Write-Output "$app - $($app.Id)"
   }
 
   $expiringRangeDays = 30
@@ -109,16 +108,16 @@ try {
   foreach ($application_id in $application_id_collection_arr) {
   
     Write-Output "Starting $application_id"
-    $containsApp = $Applications.ObjectId -contains $application_id
+    $containsApp = $Applications.Id -contains $application_id
 
     Write-Output "Contained?  $containsApp"
     if ($containsApp) {
 
       try {
-        $app = $Applications | Where-Object { $_.ObjectId -eq $application_id }
+        $app = $Applications | Where-Object { $_.Id -eq $application_id }
 
         $appName = $app.DisplayName
-        $objectId = $app.ObjectId
+        $objectId = $app.Id
         $appId = $app.ApplicationId.ToString()
         Write-Output "Got App $appName"
 
