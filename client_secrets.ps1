@@ -147,15 +147,12 @@ try {
             EndDateTime = $secretEndDate
             StartDateTime = $secretStartDate
           }
-          New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
+          $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
 
           ## Add/Update Secret 
           Write-Output "Saving Secret to $key_vault_name"
-          $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
+          $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
           Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
-          Write-Output "Saving ID to $key_vault_name"
-          $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
         }
         else {
 
@@ -200,15 +197,19 @@ try {
               EndDateTime = $secretEndDate
               StartDateTime = $secretStartDate
             }
-            New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
+            $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
     
             ## Add/Update Secret 
-            $secretvalue = ConvertTo-SecureString $StringPassword -AsPlainText -Force
+            $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
             Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           }
 
           Write-Output "Recycling $appName Secrets ENDED"
         }
+
+        Write-Output "Saving ID to $key_vault_name"
+        $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+        Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
       }
       catch {
         Write-Error "Failed to update secret: $application_id. Aborting."; 
