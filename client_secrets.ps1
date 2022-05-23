@@ -127,8 +127,6 @@ try {
         $kvSecretName = "$prefix-$product-$environment-$appName"
         $secretStartDate = Get-Date 
         $secretEndDate = $secretStartDate.AddYears($expiryFromNowYears) 
-        $StringPassword = GeneratePassword
-        $SecureStringPassword = ConvertTo-SecureString $StringPassword -AsPlainText -Force
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
   
