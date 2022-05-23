@@ -134,7 +134,7 @@ try {
   
         Write-Output "Checking $appName has automated secrets"
 
-        $filteredSecrets = $($secrets | Where-Object { $_.CustomKeyIdentifier -like "$displayNamePrefix*" })
+        $filteredSecrets = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefix*" })
         $secretCount = $filteredSecrets.length
         $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
         Write-Output "Length: $secretCount"
@@ -163,7 +163,7 @@ try {
           
           $validSecrets = $false
           foreach ($s in $filteredSecrets) {
-            $keyName = $s.CustomKeyIdentifier 
+            $keyName = $s.DisplayName 
             Write-Output "Secret: $keyName"
             $keyId = $s.KeyId
             Write-Output "$appName Secret $keyName"
