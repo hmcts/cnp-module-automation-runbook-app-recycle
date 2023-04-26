@@ -163,7 +163,8 @@ try {
             $keyId = $s.KeyId
             Write-Output "$appName Secret $keyName"
   
-            $endDate = Get-Date($s.EndDate) 
+            $endDate = Get-Date($s.EndDate)
+
             $currentDate = Get-Date
             $expiringRangeDate = $(Get-Date).AddDays($expiringRangeDays)
 
