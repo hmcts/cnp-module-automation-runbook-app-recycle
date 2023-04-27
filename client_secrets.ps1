@@ -175,7 +175,7 @@ try {
             Write-Output "Expiry Date Range is $expiringRangeDate. It has $($expiringRangeDateObj.Days) day"
             if ($endDateObj.Days -lt 1) {
               Write-Output "$keyName has expired ($endDate). Removing Key"
-              Remove-AzADAppCredential -ObjectId $appId -KeyId $keyId -Confirm:$false -DefaultProfile $targetContext
+              Remove-AzADAppCredential -ObjectId $objectId -KeyId $keyId -DefaultProfile $targetContext
             }
             elseif ($expiringRangeDateObj.Days -lt $expiringRangeDays) {
               Write-Output "$keyName will expire within $expiringRangeDays."           
