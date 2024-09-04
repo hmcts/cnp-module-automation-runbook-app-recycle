@@ -12,16 +12,16 @@ Param(
   [string]$product,
   [string]$prefix,
 
-  [string]$key_vault_name 
+  [string]$key_vault_name
 )
 
 $application_id_collection_arr = $application_id_collection.Split(',')
 if ($application_id_collection_arr.length -lt 1) {
-  Write-Warning "No Applications to process. $application_id_collection"; 
+  Write-Warning "No Applications to process. $application_id_collection";
   exit
 }
 else {
-  Write-Output "there is Applications to process. $application_id_collection"; 
+  Write-Output "there is Applications to process. $application_id_collection";
 }
 
 #############################################################
@@ -30,13 +30,13 @@ else {
 
 # Ensures you do not inherit an AzContext in your runbook
 Disable-AzContextAutosave -Scope Process | Out-Null
- 
+
 # Connect using a Managed Service Identity
 try {
   $sourceContext = (Connect-AzAccount -Identity -TenantId $source_tenant_id -AccountId $source_client_id ).context
 }
 catch {
-  Write-Error "Cannot connect to the source Managed Identity $source_client_id in $source_tenant_id. Aborting."; 
+  Write-Error "Cannot connect to the source Managed Identity $source_client_id in $source_tenant_id. Aborting.";
   exit
 }
 
@@ -56,7 +56,7 @@ else {
     $targetContext = (Connect-AzAccount -ServicePrincipal -TenantId $target_tenant_id -Credential $Credential).context
   }
   catch {
-    Write-Error "Failed to connect remote tenant. Error: $($_)"; 
+    Write-Error "Failed to connect remote tenant. Error: $($_)";
     exit
   }
 }
@@ -73,19 +73,19 @@ function GeneratePassword {
     $private:ofs = ""
     return [String]$characters[$random]
   }
- 
-  function ScrambleString([string]$inputString) {     
-    $characterArray = $inputString.ToCharArray()   
-    $scrambledStringArray = $characterArray | Get-Random -Count $characterArray.Length     
+
+  function ScrambleString([string]$inputString) {
+    $characterArray = $inputString.ToCharArray()
+    $scrambledStringArray = $characterArray | Get-Random -Count $characterArray.Length
     $outputString = -join $scrambledStringArray
-    return $outputString 
+    return $outputString
   }
- 
+
   $password = Get-RandomCharacters -length 5 -characters 'abcdefghiklmnoprstuvwxyz'
   $password += Get-RandomCharacters -length 1 -characters 'ABCDEFGHKLMNOPRSTUVWXYZ'
   $password += Get-RandomCharacters -length 1 -characters '1234567890'
   $password += Get-RandomCharacters -length 1 -characters '!"§$%&/()=?}][{@#*+'
- 
+
   $password = ScrambleString $password
 
   return $password
@@ -106,7 +106,7 @@ try {
 
   Write-Output "Start Processing"
   foreach ($application_id in $application_id_collection_arr) {
-  
+
     Write-Output "Starting $application_id"
     $containsApp = $Applications.Id -contains $application_id
 
@@ -125,11 +125,11 @@ try {
         Write-Output "Got $($secrets.length) Secrets in Total"
 
         $kvSecretName = "$prefix-$product-$environment-$appName"
-        $secretStartDate = Get-Date 
-        $secretEndDate = $secretStartDate.AddYears($expiryFromNowYears) 
+        $secretStartDate = Get-Date
+        $secretEndDate = $secretStartDate.AddYears($expiryFromNowYears)
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
-  
+
         Write-Output "Checking $appName has automated secrets"
 
         $filteredSecrets = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefix*" })
@@ -137,7 +137,7 @@ try {
         $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
         Write-Output "Length: $secretCount"
         Write-Output "Auto Secret Exits? $secretExists"
-  
+
         if (!$secretExists) {
           Write-Output "Creating Secret $kvSecretName"
           $passCreds = [PSCustomObject]@{
@@ -147,7 +147,7 @@ try {
           }
           $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
 
-          ## Add/Update Secret 
+          ## Add/Update Secret
           Write-Output "Saving Secret to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
           Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
@@ -155,14 +155,14 @@ try {
         else {
 
           Write-Output "Recycling $appName Secrets STARTED"
-          
+
           $validSecrets = $false
           foreach ($s in $filteredSecrets) {
-            $keyName = $s.DisplayName 
+            $keyName = $s.DisplayName
             Write-Output "Secret: $keyName"
             $keyId = $s.KeyId
             Write-Output "$appName Secret $keyName"
-  
+
             $endDate = Get-Date($s.EndDateTime)
 
             $currentDate = Get-Date
@@ -178,18 +178,18 @@ try {
               Remove-AzADAppCredential -ObjectId $objectId -KeyId $keyId -DefaultProfile $targetContext
             }
             elseif ($expiringRangeDateObj.Days -lt $expiringRangeDays) {
-              Write-Output "$keyName will expire within $expiringRangeDays."           
+              Write-Output "$keyName will expire within $expiringRangeDays."
             }
             else {
               Write-Output "$kvSecretName secret is not expiring"
               $validSecrets = $true
             }
-           
+
           }
 
           if (!$validSecrets) {
             Write-Output "There are no valid secrets"
-    
+
             Write-Output "Creating Secret $kvSecretName"
             $passCreds = [PSCustomObject]@{
               DisplayName = $displayName
@@ -197,8 +197,8 @@ try {
               StartDateTime = $secretStartDate
             }
             $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
-    
-            ## Add/Update Secret 
+
+            ## Add/Update Secret
             $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
             Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
           }
@@ -206,16 +206,24 @@ try {
           Write-Output "Recycling $appName Secrets ENDED"
         }
 
-        Write-Output "Saving ID to $key_vault_name"
-        $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-        Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
+        try {
+            # Try to retrieve the id Secret
+            $currentSecret = Get-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -DefaultProfile $sourceContext
+            Write-Output "ID for $key_vault_name already exists."
+        } catch {
+            # If the Secret doesn't exist, Add/Update Secret here
+            Write-Output "Saving ID to $key_vault_name"
+            $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
+            Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
+        }
+
       }
       catch {
-        Write-Error "Failed to update secret: $application_id. Aborting."; 
-        Write-Error "Error: $($_)"; 
+        Write-Error "Failed to update secret: $application_id. Aborting.";
+        Write-Error "Error: $($_)";
         exit
       }
-    
+
       Write-Output "Ending $application_id"
     }
     else {
@@ -227,8 +235,8 @@ try {
 
 }
 catch {
-  Write-Error "Failed to process secrets. Aborting."; 
-  Write-Error "Error: $($_)"; 
+  Write-Error "Failed to process secrets. Aborting.";
+  Write-Error "Error: $($_)";
   exit
 }
 
