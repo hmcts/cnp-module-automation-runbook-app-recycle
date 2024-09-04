@@ -102,7 +102,7 @@ try {
   }
 
   $expiringRangeDays = 30
-  $expiryFromNowYears = 1
+  $expiryFromNowMonths = 13
 
   Write-Output "Start Processing"
   foreach ($application_id in $application_id_collection_arr) {
@@ -126,7 +126,7 @@ try {
 
         $kvSecretName = "$prefix-$product-$environment-$appName"
         $secretStartDate = Get-Date
-        $secretEndDate = $secretStartDate.AddYears($expiryFromNowYears)
+        $secretEndDate = $secretStartDate.AddMonths($expiryFromNowMonths)
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
 
