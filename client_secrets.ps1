@@ -129,11 +129,15 @@ try {
         $secretEndDate = $secretStartDate.AddMonths($expiryFromNowMonths)
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
+        $displayNamePrefixId = "$prefix-id"
+        $displayNameId = "$displayNamePrefixId-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
 
         Write-Output "Checking $appName has automated secrets"
 
         $filteredSecrets = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefix*" })
-        $secretCount = $filteredSecrets.length
+        $filteredSecretsId = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefixId*" })
+
+        $secretCount = $filteredSecrets.length + $filteredSecretsId.length
         $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
         Write-Output "Length: $secretCount"
         Write-Output "Auto Secret Exits? $secretExists"
@@ -147,17 +151,22 @@ try {
           }
           $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
 
-          ## Add/Update Secret
+          ## Add/Update Secrets
           Write-Output "Saving Secret to $key_vault_name"
           $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
           Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+
+          Write-Output "Saving ID to $key_vault_name"
+          $secretvalueId = ConvertTo-SecureString $appId -AsPlainText -Force
+          Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalueId -DefaultProfile $sourceContext
         }
         else {
 
           Write-Output "Recycling $appName Secrets STARTED"
 
           $validSecrets = $false
-          foreach ($s in $filteredSecrets) {
+          $combinedSecrets = $filteredSecrets + $filteredSecretsId
+          foreach ($s in $combinedSecrets) {
             $keyName = $s.DisplayName
             Write-Output "Secret: $keyName"
             $keyId = $s.KeyId
@@ -198,23 +207,16 @@ try {
             }
             $response = New-AzADAppCredential -ObjectId $objectId -PasswordCredentials $passCreds -DefaultProfile $targetContext
 
-            ## Add/Update Secret
+            ## Add/Update Secrets
             $secretvalue = ConvertTo-SecureString $response.secretText -AsPlainText -Force
             Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-pwd" -SecretValue $secretvalue -DefaultProfile $sourceContext
+
+            Write-Output "Saving ID to $key_vault_name"
+            $secretvalueId = ConvertTo-SecureString $appId -AsPlainText -Force
+            Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalueId -DefaultProfile $sourceContext
           }
 
           Write-Output "Recycling $appName Secrets ENDED"
-        }
-
-        try {
-            # Try to retrieve the id Secret
-            $currentSecret = Get-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -DefaultProfile $sourceContext
-            Write-Output "ID for $key_vault_name already exists."
-        } catch {
-            # If the Secret doesn't exist, Add/Update Secret here
-            Write-Output "Saving ID to $key_vault_name"
-            $secretvalue = ConvertTo-SecureString $appId -AsPlainText -Force
-            Set-AzKeyVaultSecret -VaultName $key_vault_name -Name "$kvSecretName-id" -SecretValue $secretvalue -DefaultProfile $sourceContext
         }
 
       }
