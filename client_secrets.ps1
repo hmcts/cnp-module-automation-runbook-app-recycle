@@ -129,15 +129,11 @@ try {
         $secretEndDate = $secretStartDate.AddMonths($expiryFromNowMonths)
         $displayNamePrefix = "$prefix-pwd"
         $displayName = "$displayNamePrefix-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
-        $displayNamePrefixId = "$prefix-id"
-        $displayNameId = "$displayNamePrefixId-$($(Get-Date).ToString('yyyyMMddhhmmss'))"
 
         Write-Output "Checking $appName has automated secrets"
 
         $filteredSecrets = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefix*" })
-        $filteredSecretsId = $($secrets | Where-Object { $_.DisplayName -like "$displayNamePrefixId*" })
-
-        $secretCount = $filteredSecrets.length + $filteredSecretsId.length
+        $secretCount = $filteredSecrets.length
         $secretExists = ($secretCount -gt 0 -and $null -ne $secrets)
         Write-Output "Length: $secretCount"
         Write-Output "Auto Secret Exits? $secretExists"
@@ -165,8 +161,7 @@ try {
           Write-Output "Recycling $appName Secrets STARTED"
 
           $validSecrets = $false
-          $combinedSecrets = $filteredSecrets + $filteredSecretsId
-          foreach ($s in $combinedSecrets) {
+          foreach ($s in $filteredSecrets) {
             $keyName = $s.DisplayName
             Write-Output "Secret: $keyName"
             $keyId = $s.KeyId
